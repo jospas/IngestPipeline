@@ -1,0 +1,124 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Provides Lambda execution roles for ingest and processing of data for a system'
+
+Parameters:
+  SourceSystemName:
+    Type: String
+    Description: The name of the source system to ingest (3-15 lowercase characters)
+    AllowedPattern: '^[a-z]{3,15}$'
+
+  StageName:
+    Type: String
+    AllowedValues:
+      - dev
+      - test
+      - prod
+    Description: The stage of deployment
+
+Resources:
+
+  InputLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub '${StageName}-input-${SourceSystemName}-role'
+      Path: /
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+            - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+              - lambda.amazonaws.com
+        Version: 2012-10-17
+      ManagedPolicyArns:
+        - !Ref InputLambdaCloudWatchPolicy
+        - !Ref InputLambdaS3Policy
+
+  ProcessedLambdaRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: !Sub '${StageName}-processed-${SourceSystemName}-role'
+        Path: /
+        AssumeRolePolicyDocument:
+          Statement:
+            - Action:
+              - sts:AssumeRole
+              Effect: Allow
+              Principal:
+                Service:
+                - lambda.amazonaws.com
+          Version: 2012-10-17
+        ManagedPolicyArns:
+          - !Ref ProcessedLambdaCloudWatchPolicy
+          - !Ref ProcessedLambdaS3Policy
+
+  InputLambdaCloudWatchPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub '${StageName}-input-${SourceSystemName}-cloudwatch-policy'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowLambdaToCreateLogStreamAndPut
+            Effect: Allow
+            Action:
+              - 'logs:CreateLogStream'
+              - 'logs:PutLogEvents'
+            Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*:*'
+          - Sid: AllowLambdaToCreateLogGroups
+            Effect: Allow
+            Action:
+              - 'logs:CreateLogGroup'
+            Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*'
+
+  InputLambdaS3Policy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub '${StageName}-input-${SourceSystemName}-s3-policy'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowReadFromInputBucket
+            Effect: Allow
+            Action:
+              - 's3:Get*'
+              - 's3:List*'
+            Resource:
+              - !Sub 'arn:aws:s3:::${StageName}-input-${SourceSystemName}-${AWS::AccountId}'
+              - !Sub 'arn:aws:s3:::${StageName}-input-${SourceSystemName}-${AWS::AccountId}/*'
+
+  ProcessedLambdaCloudWatchPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub '${StageName}-processed-${SourceSystemName}-cloudwatch-policy'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowLambdaToCreateLogStreamAndPut
+            Effect: Allow
+            Action:
+              - 'logs:CreateLogStream'
+              - 'logs:PutLogEvents'
+            Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*:*'
+          - Sid: AllowLambdaToCreateLogGroups
+            Effect: Allow
+            Action:
+              - 'logs:CreateLogGroup'
+            Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*'
+
+  ProcessedLambdaS3Policy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub '${StageName}-processed-${SourceSystemName}-s3-policy'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowReadFromProcessedBucket
+            Effect: Allow
+            Action:
+              - 's3:Get*'
+              - 's3:List*'
+            Resource:
+              - !Sub 'arn:aws:s3:::${StageName}-processed-${SourceSystemName}-${AWS::AccountId}'
+              - !Sub 'arn:aws:s3:::${StageName}-processed-${SourceSystemName}-${AWS::AccountId}/*'

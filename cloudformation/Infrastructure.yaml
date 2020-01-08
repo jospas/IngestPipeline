@@ -1,0 +1,284 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Provides S3 bucket and SNS topic infrastructure for ingesting a system'
+Parameters:
+  SourceSystemName:
+    Type: String
+    Description: The name of the source system to ingest (3-15 lowercase characters)
+    AllowedPattern: '^[a-z]{3,15}$'
+
+  StageName:
+    Type: String
+    AllowedValues:
+      - dev
+      - test
+      - prod
+    Description: The stage of deployment
+
+Resources:
+
+  InputBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${StageName}-input-${SourceSystemName}-${AWS::AccountId}'
+      AccessControl: Private
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              KMSMasterKeyID: !Ref InputBucketKMSKey
+              SSEAlgorithm: "aws:kms"
+      NotificationConfiguration:
+        TopicConfigurations:
+          - Event: 's3:ObjectCreated:*'
+            Topic: !Ref InputS3EventTopic
+
+  ProcessedBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub '${StageName}-processed-${SourceSystemName}-${AWS::AccountId}'
+      AccessControl: Private
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              KMSMasterKeyID: !Ref ProcessedBucketKMSKey
+              SSEAlgorithm: "aws:kms"
+      NotificationConfiguration:
+        TopicConfigurations:
+          - Event: 's3:ObjectCreated:*'
+            Topic: !Ref ProcessedS3EventTopic
+
+  InputBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref InputBucket
+      PolicyDocument:
+        Statement:
+          - Sid: DenyIncorrectEncryptionHeader
+            Effect: Deny
+            Principal: '*'
+            Action: s3:PutObject
+            Resource: !Join
+              - ''
+              - - 'arn:aws:s3:::'
+                - !Ref InputBucket
+                - /*
+            Condition:
+              StringNotEquals:
+                s3:x-amz-server-side-encryption: aws:kms
+          - Sid: DenyIncorrectKMSIdHeader
+            Effect: Deny
+            Principal: '*'
+            Action: s3:PutObject
+            Resource: !Join
+              - ''
+              - - 'arn:aws:s3:::'
+                - !Ref InputBucket
+                - /*
+            Condition:
+              StringNotEquals:
+                s3:x-amz-server-side-encryption-aws-kms-key-id: !Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/$InputBucketKMSKey}'
+          - Sid: DenyUnEncryptedObjectUploads
+            Effect: Deny
+            Principal: '*'
+            Action: s3:PutObject
+            Resource: !Join
+              - ''
+              - - 'arn:aws:s3:::'
+                - !Ref InputBucket
+                - /*
+            Condition:
+              'Null':
+                s3:x-amz-server-side-encryption: true
+
+  ProcessedBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ProcessedBucket
+      PolicyDocument:
+        Statement:
+          - Sid: DenyIncorrectEncryptionHeader
+            Effect: Deny
+            Principal: '*'
+            Action: s3:PutObject
+            Resource: !Join
+              - ''
+              - - 'arn:aws:s3:::'
+                - !Ref ProcessedBucket
+                - /*
+            Condition:
+              StringNotEquals:
+                s3:x-amz-server-side-encryption: aws:kms
+          - Sid: DenyIncorrectKMSIdHeader
+            Effect: Deny
+            Principal: '*'
+            Action: s3:PutObject
+            Resource: !Join
+              - ''
+              - - 'arn:aws:s3:::'
+                - !Ref ProcessedBucket
+                - /*
+            Condition:
+              StringNotEquals:
+                s3:x-amz-server-side-encryption-aws-kms-key-id: !Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${ProcessedBucketKMSKey}'
+          - Sid: DenyUnEncryptedObjectUploads
+            Effect: Deny
+            Principal: '*'
+            Action: s3:PutObject
+            Resource: !Join
+              - ''
+              - - 'arn:aws:s3:::'
+                - !Ref ProcessedBucket
+                - /*
+            Condition:
+              'Null':
+                s3:x-amz-server-side-encryption: true
+
+  InputBucketKMSKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: !Sub 's3-${StageName}-input-${SourceSystemName} - encrypts input ${SourceSystemName} data'
+      KeyPolicy:
+        Version: '2012-10-17'
+        Id: !Sub 's3-${StageName}-input-${SourceSystemName}'
+        Statement:
+          -
+            Sid: 'Allow administration of the key'
+            Effect: 'Allow'
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action:
+              - 'kms:*'
+            Resource: '*'
+          -
+            Sid: 'Allow use of the key'
+            Effect: 'Allow'
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action:
+              - 'kms:Encrypt'
+              - 'kms:Decrypt'
+              - 'kms:ReEncrypt*'
+              - 'kms:GenerateDataKey*'
+              - 'kms:DescribeKey'
+            Resource: '*'
+
+  ContentStoreKMSAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub 'alias/s3-${StageName}-input-${SourceSystemName}'
+      TargetKeyId: !Ref InputBucketKMSKey
+
+  ProcessedBucketKMSKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: !Sub 's3-${StageName}-processed-${SourceSystemName} - encrypts processed ${SourceSystemName} data'
+      KeyPolicy:
+        Version: '2012-10-17'
+        Id: !Sub 's3-${StageName}-processed-${SourceSystemName}'
+        Statement:
+          -
+            Sid: 'Allow administration of the key'
+            Effect: 'Allow'
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action:
+              - 'kms:*'
+            Resource: '*'
+          -
+            Sid: 'Allow use of the key'
+            Effect: 'Allow'
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action:
+              - 'kms:Encrypt'
+              - 'kms:Decrypt'
+              - 'kms:ReEncrypt*'
+              - 'kms:GenerateDataKey*'
+              - 'kms:DescribeKey'
+            Resource: '*'
+
+  ProcessedBucketKMSAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub 'alias/s3-${StageName}-processed-${SourceSystemName}'
+      TargetKeyId: !Ref ProcessedBucketKMSKey
+
+  InputS3EventTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${StageName}-input-${SourceSystemName}-s3events'
+      DisplayName: !Sub '${StageName}-input-${SourceSystemName}-s3events'
+
+  InputS3EventTopicPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: AllowBucketToPushNotifications
+          Effect: Allow
+          Principal:
+            Service: s3.amazonaws.com
+          Action: sns:Publish
+          Resource: !Ref InputS3EventTopic
+      Topics:
+      - !Ref InputS3EventTopic
+
+  ProcessedS3EventTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub '${StageName}-processed-${SourceSystemName}-s3events'
+      DisplayName: !Sub '${StageName}-processed-${SourceSystemName}-s3events'
+
+  ProcessedS3EventTopicPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: AllowBucketToPushNotifications
+          Effect: Allow
+          Principal:
+            Service: s3.amazonaws.com
+          Action: sns:Publish
+          Resource: !Ref ProcessedS3EventTopic
+      Topics:
+      - !Ref ProcessedS3EventTopic
+
+Outputs:
+  InputBucketName:
+    Description: The name of the input bucket
+    Value: !Ref InputBucket
+    Export:
+      Name: !Sub "${AWS::StackName}:InputBucketName"
+
+  InputS3EventTopicARN:
+    Description: The ARN of the input bucket event SNS topic
+    Value: !Ref InputS3EventTopic
+    Export:
+      Name: !Sub "${AWS::StackName}:InputS3EventTopicARN"
+
+  ProcessedBucketName:
+    Description: The name of the processed bucket
+    Value: !Ref ProcessedBucket
+    Export:
+      Name: !Sub "${AWS::StackName}:ProcessedBucketName"
+
+  ProcessedS3EventTopicARN:
+    Description: The ARN of the processed bucket event SNS topic
+    Value: !Ref ProcessedS3EventTopic
+    Export:
+      Name: !Sub "${AWS::StackName}:ProcessedS3EventTopicARN"
