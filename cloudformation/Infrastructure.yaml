@@ -89,7 +89,7 @@ Resources:
                 - /*
             Condition:
               StringNotEquals:
-                s3:x-amz-server-side-encryption-aws-kms-key-id: !Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/$InputBucketKMSKey}'
+                s3:x-amz-server-side-encryption-aws-kms-key-id: !Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${InputBucketKMSKey}'
           - Sid: DenyUnEncryptedObjectUploads
             Effect: Deny
             Principal: '*'
