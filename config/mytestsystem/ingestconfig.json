@@ -1,0 +1,42 @@
+{
+  "source": "mytestsystem",
+  "description": "Configuration for ingesting mytestsystem data files",
+  "files": [
+    {
+      "name": "customer",
+      "regex": "^customer-.*csv$",
+      "inputColumns":
+      [
+        "customer_id", "title", "first", "last", "joined", "total_value"
+      ],
+      "outputColumns":
+      [
+        "customer_id", "total_value"
+      ]
+    },
+    {
+      "name": "accounts",
+      "regex": "^accounts-.*csv$",
+      "inputColumns":
+      [
+        "account_id", "customer_id", "balance"
+      ],
+      "outputColumns":
+      [
+        "account_id", "customer_id", "balance"
+      ]
+    },
+    {
+      "name": "transactions",
+      "regex": "^transactions-.*csv$",
+      "inputColumns":
+      [
+        "transaction_id", "account_id", "transaction_date", "amount", "description"
+      ],
+      "outputColumns":
+      [
+        "transaction_id", "account_id", "transaction_date", "amount"
+      ]
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 
-Description: 'Deploys a Lambda function to process input data'
+Description: 'Deploys a Lambda function to process processed data'
 
 Parameters:
 
@@ -23,61 +23,62 @@ Resources:
   IngestLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: !Sub '${StageName}-${SourceSystemName}-input-lambda-function'
-      Handler: 'com.aws.ingest.lambda.input.InputLambda'
+      FunctionName: !Sub '${StageName}-${SourceSystemName}-processed-lambda-function'
+      Handler: 'com.aws.ingest.lambda.processed.ProcessedLambda'
       Runtime: java8
       Timeout: 900
       MemorySize: 1024
       CodeUri: ../target/IngestPipeline-1.0.0.jar
       Role:
         Fn::ImportValue:
-          !Sub '${StageName}-${SourceSystemName}-input-lambda-role-arn'
+          !Sub '${StageName}-${SourceSystemName}-processed-lambda-role-arn'
       Events:
         SQSEvent:
           Type: SQS
           Properties:
             BatchSize: 1
             Enabled: true
-            Queue: !GetAtt 'InputBucketQueue.Arn'
+            Queue: !GetAtt 'ProcessedBucketQueue.Arn'
       Environment:
         Variables:
           CONFIG_BUCKET:
             Fn::ImportValue:
-              !Sub '${StageName}-${SourceSystemName}-s3-input-bucket'
-  InputBucketQueue:
+              !Sub '${StageName}-${SourceSystemName}-s3-processed-bucket'
+
+  ProcessedBucketQueue:
     Type: AWS::SQS::Queue
     Properties:
       MaximumMessageSize: 262144
       MessageRetentionPeriod: 1209600
-      QueueName: !Sub '${StageName}-input-${SourceSystemName}-queue'
+      QueueName: !Sub '${StageName}-processed-${SourceSystemName}-queue'
       VisibilityTimeout: 960
       RedrivePolicy:
-        deadLetterTargetArn: !GetAtt InputBucketRedriveQueue.Arn
+        deadLetterTargetArn: !GetAtt ProcessedBucketRedriveQueue.Arn
         maxReceiveCount: 5
 
-  InputBucketRedriveQueue:
+  ProcessedBucketRedriveQueue:
     Type: AWS::SQS::Queue
     Properties:
       MaximumMessageSize: 262144
       MessageRetentionPeriod: 1209600
-      QueueName: !Sub '${StageName}-input-${SourceSystemName}-redrive-queue'
+      QueueName: !Sub '${StageName}-processed-${SourceSystemName}-redrive-queue'
       VisibilityTimeout: 960
 
-  InputBucketQueueSubscription:
+  ProcessedBucketQueueSubscription:
     Type: AWS::SNS::Subscription
     Properties:
-      Endpoint: !GetAtt 'InputBucketQueue.Arn'
+      Endpoint: !GetAtt 'ProcessedBucketQueue.Arn'
       Protocol: sqs
       RawMessageDelivery: true
       TopicArn:
         Fn::ImportValue:
-          !Sub '${StageName}-${SourceSystemName}-sns-input-topic-arn'
+          !Sub '${StageName}-${SourceSystemName}-sns-processed-topic-arn'
 
-  InputBucketQueuePolicy:
+  ProcessedBucketQueuePolicy:
     Type: AWS::SQS::QueuePolicy
     Properties:
       Queues:
-        - !Ref InputBucketQueue
+        - !Ref ProcessedBucketQueue
       PolicyDocument:
         Statement:
           Effect: Allow
@@ -88,4 +89,4 @@ Resources:
             ArnEquals:
               aws:SourceArn:
                 Fn::ImportValue:
-                  !Sub '${StageName}-${SourceSystemName}-sns-input-topic-arn'
+                  !Sub '${StageName}-${SourceSystemName}-sns-processed-topic-arn'

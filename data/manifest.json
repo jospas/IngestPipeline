@@ -1,0 +1,18 @@
+{
+  "createdDate": "2020-01-09T12:55:31Z",
+  "sourceSystem": "mytestsystem",
+  "manifestEntries": [
+    {
+      "dataType": "customer",
+      "rowCount": 100,
+      "fileName": "customers.csv",
+      "secureHash": "ASKDHASKJAHFJKAHDKHASKDHKASHDKASHDKHASKDHAKSHDKAHSD"
+    },
+    {
+      "dataType": "transaction",
+      "rowCount": 1000,
+      "fileName": "transactions.csv",
+      "secureHash": "ASDASDGHASGDJHGASJDGAJSHGDJHAGSDJHGASJHGDJASGDJGASJD"
+    }
+  ]
+}

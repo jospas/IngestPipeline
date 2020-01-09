@@ -1,0 +1,43 @@
+{
+  "dataTypes": [
+    {
+      "name": "customer",
+      "enabled": true,
+      "inputColumns": [
+        "customer_id",
+        "title",
+        "first_name",
+        "last_name",
+        "dob",
+        "address1",
+        "address2",
+        "suburb",
+        "state",
+        "postcode"
+      ],
+      "outputColumns": [
+        "customer_id",
+        "postcode"
+      ]
+    },
+    {
+      "name": "transaction",
+      "enabled": true,
+      "inputColumns": [
+        "transaction_id",
+        "account_id",
+        "customer_id",
+        "transaction_date",
+        "description",
+        "amount"
+      ],
+      "outputColumns": [
+        "transaction_id",
+        "account_id",
+        "customer_id",
+        "transaction_date",
+        "amount"
+      ]
+    }
+  ]
+}
