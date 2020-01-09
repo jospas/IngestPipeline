@@ -33,7 +33,9 @@ mvn package
 
 ### Installing
 
-#### Infrastructure Template
+The templates should be deployed in the order detailed below.
+
+#### 1) Infrastructure Template
 
 This template creates two S3 buckets and SNS topics that listen to object creation events.
 
@@ -45,7 +47,8 @@ aws cloudformation deploy \
     --profile <aws profile> \
     --region <aws region> \
     --stack-name <stack name> \
-    --parameter-overrides Stage=<stage> SourceSystem=<source system name>
+    --parameter-overrides Stage=<stage> \
+    	SourceSystemName=<source system name>
 ```
 
 For example deploying a dev stack for MyTestSystem:
@@ -56,5 +59,38 @@ aws cloudformation deploy \
     --profile aws-josh \
     --region ap-southeast-2 \
     --stack-name MyTestSystemStack \
-    --parameter-overrides Stage=dev SourceSystemName=mytestsystem
+    --parameter-overrides Stage=dev \
+    	SourceSystemName=mytestsystem
+```
+
+#### 2) Lambda Roles Template
+
+This template creates IAM roles for the two Lambda functions, subscribes them to an SQS queue and subscribes the SQS queuer to the SNS topics attached to the infrastrcuture buckets.
+
+It requires the capabilties for named IAM changes.
+
+Use the AWS CLI to deploy via CloudFormation:
+
+```bash
+aws cloudformation deploy \
+	--template-file cloudformation/LambdaRoles.yaml \
+	--profile <aws profile> \
+	--region <aws region> \
+	--stack-name <stack name> \
+	--parameter-overrides StageName=<stage> \
+		SourceSystemName=<source system name> \
+	--capabilities CAPABILITY_NAMED_IAM
+```
+
+For example deploying a dev stack for MyTestSystem:
+
+```bash
+aws cloudformation deploy \
+	--template-file cloudformation/LambdaRoles.yaml \
+	--profile aws-josh \
+	--region ap-southeast-2 \
+	--stack-name MyTestSystemIAMStack \
+	--parameter-overrides StageName=dev 
+		SourceSystemName=mytestsystem \
+	--capabilities CAPABILITY_NAMED_IAM
 ```

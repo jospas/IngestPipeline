@@ -263,22 +263,34 @@ Outputs:
     Description: The name of the input bucket
     Value: !Ref InputBucket
     Export:
-      Name: !Sub "${AWS::StackName}:InputBucketName"
+      Name: !Sub "${StageName}-${SourceSystemName}-s3-input-bucket"
 
   InputS3EventTopicARN:
     Description: The ARN of the input bucket event SNS topic
     Value: !Ref InputS3EventTopic
     Export:
-      Name: !Sub "${AWS::StackName}:InputS3EventTopicARN"
+      Name: !Sub "${StageName}-${SourceSystemName}-sns-input-topic-arn"
+
+  InputBucketKMSKeyARN:
+    Description: The ARN of the input KMS key
+    Value: !GetAtt 'InputBucketKMSKey.Arn'
+    Export:
+      Name: !Sub "${StageName}-${SourceSystemName}-kms-input-key-arn"
 
   ProcessedBucketName:
     Description: The name of the processed bucket
     Value: !Ref ProcessedBucket
     Export:
-      Name: !Sub "${AWS::StackName}:ProcessedBucketName"
+      Name: !Sub "${StageName}-${SourceSystemName}-s3-processed-bucket"
 
   ProcessedS3EventTopicARN:
     Description: The ARN of the processed bucket event SNS topic
     Value: !Ref ProcessedS3EventTopic
     Export:
-      Name: !Sub "${AWS::StackName}:ProcessedS3EventTopicARN"
+      Name: !Sub "${StageName}-${SourceSystemName}-sns-processed-topic-arn"
+
+  ProcessedBucketKMSKeyARN:
+    Description: The ARN of the processed KMS key
+    Value: !GetAtt 'ProcessedBucketKMSKey.Arn'
+    Export:
+      Name: !Sub "${StageName}-${SourceSystemName}-kms-processed-key-arn"

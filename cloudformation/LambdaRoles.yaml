@@ -34,6 +34,7 @@ Resources:
       ManagedPolicyArns:
         - !Ref InputLambdaCloudWatchPolicy
         - !Ref InputLambdaS3Policy
+        - !Ref InputLambdaKMSPolicy
 
   ProcessedLambdaRole:
       Type: AWS::IAM::Role
@@ -52,6 +53,7 @@ Resources:
         ManagedPolicyArns:
           - !Ref ProcessedLambdaCloudWatchPolicy
           - !Ref ProcessedLambdaS3Policy
+          - !Ref ProcessedLambdaKMSPolicy
 
   InputLambdaCloudWatchPolicy:
     Type: AWS::IAM::ManagedPolicy
@@ -82,11 +84,40 @@ Resources:
           - Sid: AllowReadFromInputBucket
             Effect: Allow
             Action:
-              - 's3:Get*'
-              - 's3:List*'
+              - 's3:GetObject'
+              - 's3:ListBucket'
             Resource:
               - !Sub 'arn:aws:s3:::${StageName}-input-${SourceSystemName}-${AWS::AccountId}'
               - !Sub 'arn:aws:s3:::${StageName}-input-${SourceSystemName}-${AWS::AccountId}/*'
+          - Sid: AllowWriteToProcessedBucket
+            Effect: Allow
+            Action:
+              - 's3:PutObject'
+            Resource:
+              - !Sub 'arn:aws:s3:::${StageName}-input-${SourceSystemName}-${AWS::AccountId}'
+              - !Sub 'arn:aws:s3:::${StageName}-input-${SourceSystemName}-${AWS::AccountId}/*'
+
+  InputLambdaKMSPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub '${StageName}-input-${SourceSystemName}-kms-policy'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowDecryptFromInputBucket
+            Effect: Allow
+            Action:
+              - 'kms:Decrypt'
+            Resource:
+              Fn::ImportValue:
+                !Sub '${StageName}-${SourceSystemName}-kms-input-key-arn'
+          - Sid: AllowEncryptToProcessedBucket
+            Effect: Allow
+            Action:
+              - 'kms:Encrypt'
+            Resource:
+              Fn::ImportValue:
+                !Sub '${StageName}-${SourceSystemName}-kms-processed-key-arn'
 
   ProcessedLambdaCloudWatchPolicy:
     Type: AWS::IAM::ManagedPolicy
@@ -117,8 +148,23 @@ Resources:
           - Sid: AllowReadFromProcessedBucket
             Effect: Allow
             Action:
-              - 's3:Get*'
-              - 's3:List*'
+              - 's3:GetObject'
+              - 's3:ListBucket'
             Resource:
               - !Sub 'arn:aws:s3:::${StageName}-processed-${SourceSystemName}-${AWS::AccountId}'
               - !Sub 'arn:aws:s3:::${StageName}-processed-${SourceSystemName}-${AWS::AccountId}/*'
+
+  ProcessedLambdaKMSPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: !Sub '${StageName}-processed-${SourceSystemName}-kms-policy'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowDecryptFromProcessedBucket
+            Effect: Allow
+            Action:
+              - 'kms:Decrypt'
+            Resource:
+              Fn::ImportValue:
+                !Sub '${StageName}-${SourceSystemName}-kms-processed-key-arn'
