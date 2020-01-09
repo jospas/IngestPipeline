@@ -150,3 +150,59 @@ aws cloudformation deploy \
 	--parameter-overrides StageName=dev \
 		SourceSystemName=mytestsystem
 ```
+
+#### 3) Processed Lambda Template
+
+This template deploys the SQS and Lambda processing pipeline subscribed the processed S3 bucket change notifications via SNS.
+
+It requires the Lambda roles created in step 2).
+
+Prepare the stack for deployment via CloudFormation:
+
+```bash
+aws cloudformation package \
+	--template-file cloudformation/ProcessedLambda.yaml \
+	--output-template-file cloudformation/ProcessedLambda-prepared.yaml \
+	--profile <aws profile> \
+    --s3-bucket <s3 bucket> \
+    --s3-prefix <s3 key prefix> \	
+	--region <aws region> \
+	--force-upload
+```
+
+For example preparing a dev stack for MyTestSystem:
+
+```bash
+aws cloudformation package \
+	--template-file cloudformation/ProcessedLambda.yaml \
+	--output-template-file cloudformation/ProcessedLambda-prepared.yaml \
+	--profile aws-josh \
+    --s3-bucket aws-joshpas-home \
+    --s3-prefix applications/processedlambda/ \
+	--region ap-southeast-2 \
+	--force-upload
+```
+
+Now deploy the prepared template:
+
+```bash
+aws cloudformation deploy \
+	--template-file cloudformation/ProcessedLambda-prepared.yaml \
+	--profile <aws profile> \
+	--region <aws region> \
+	--stack-name <stack name> \
+	--parameter-overrides StageName=<stage> \
+		SourceSystemName=<source system name>
+```
+
+For example deploying a dev stack for MyTestSystem:
+
+```bash
+aws cloudformation deploy \
+	--template-file cloudformation/ProcessedLambda-prepared.yaml \
+	--profile aws-josh \
+	--region ap-southeast-2 \
+	--stack-name MyTestSystemProcessedLambdaStack \
+	--parameter-overrides StageName=dev \
+		SourceSystemName=mytestsystem
+```
