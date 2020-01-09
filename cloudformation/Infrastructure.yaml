@@ -1,9 +1,11 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Provides S3 bucket and SNS topic infrastructure for ingesting a system'
+
 Parameters:
+
   SourceSystemName:
     Type: String
-    Description: The name of the source system to ingest (3-15 lowercase characters)
+    Description: 'The name of the source system to ingest (3-15 lowercase characters)'
     AllowedPattern: '^[a-z]{3,15}$'
 
   StageName:
@@ -12,7 +14,7 @@ Parameters:
       - dev
       - test
       - prod
-    Description: The stage of deployment
+    Description: 'The stage of deployment'
 
 Resources:
 
@@ -66,7 +68,7 @@ Resources:
       Bucket: !Ref InputBucket
       PolicyDocument:
         Statement:
-          - Sid: DenyIncorrectEncryptionHeader
+          - Sid: 'DenyIncorrectEncryptionHeader'
             Effect: Deny
             Principal: '*'
             Action: s3:PutObject
@@ -78,7 +80,7 @@ Resources:
             Condition:
               StringNotEquals:
                 s3:x-amz-server-side-encryption: aws:kms
-          - Sid: DenyIncorrectKMSIdHeader
+          - Sid: 'DenyIncorrectKMSIdHeader'
             Effect: Deny
             Principal: '*'
             Action: s3:PutObject
@@ -90,7 +92,7 @@ Resources:
             Condition:
               StringNotEquals:
                 s3:x-amz-server-side-encryption-aws-kms-key-id: !Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${InputBucketKMSKey}'
-          - Sid: DenyUnEncryptedObjectUploads
+          - Sid: 'DenyUnEncryptedObjectUploads'
             Effect: Deny
             Principal: '*'
             Action: s3:PutObject
@@ -109,7 +111,7 @@ Resources:
       Bucket: !Ref ProcessedBucket
       PolicyDocument:
         Statement:
-          - Sid: DenyIncorrectEncryptionHeader
+          - Sid: 'DenyIncorrectEncryptionHeader'
             Effect: Deny
             Principal: '*'
             Action: s3:PutObject
@@ -121,7 +123,7 @@ Resources:
             Condition:
               StringNotEquals:
                 s3:x-amz-server-side-encryption: aws:kms
-          - Sid: DenyIncorrectKMSIdHeader
+          - Sid: 'DenyIncorrectKMSIdHeader'
             Effect: Deny
             Principal: '*'
             Action: s3:PutObject
@@ -133,7 +135,7 @@ Resources:
             Condition:
               StringNotEquals:
                 s3:x-amz-server-side-encryption-aws-kms-key-id: !Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${ProcessedBucketKMSKey}'
-          - Sid: DenyUnEncryptedObjectUploads
+          - Sid: 'DenyUnEncryptedObjectUploads'
             Effect: Deny
             Principal: '*'
             Action: s3:PutObject
@@ -228,7 +230,7 @@ Resources:
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
-        - Sid: AllowBucketToPushNotifications
+        - Sid: 'AllowBucketToPushNotifications'
           Effect: Allow
           Principal:
             Service: s3.amazonaws.com
@@ -249,7 +251,7 @@ Resources:
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
-        - Sid: AllowBucketToPushNotifications
+        - Sid: 'AllowBucketToPushNotifications'
           Effect: Allow
           Principal:
             Service: s3.amazonaws.com
@@ -260,37 +262,37 @@ Resources:
 
 Outputs:
   InputBucketName:
-    Description: The name of the input bucket
+    Description: 'The name of the input bucket'
     Value: !Ref InputBucket
     Export:
       Name: !Sub "${StageName}-${SourceSystemName}-s3-input-bucket"
 
   InputS3EventTopicARN:
-    Description: The ARN of the input bucket event SNS topic
-    Value: !Ref InputS3EventTopic
+    Description: 'The ARN of the input bucket event SNS topic'
+    Value: !Ref 'InputS3EventTopic'
     Export:
       Name: !Sub "${StageName}-${SourceSystemName}-sns-input-topic-arn"
 
   InputBucketKMSKeyARN:
-    Description: The ARN of the input KMS key
+    Description: 'The ARN of the input KMS key'
     Value: !GetAtt 'InputBucketKMSKey.Arn'
     Export:
       Name: !Sub "${StageName}-${SourceSystemName}-kms-input-key-arn"
 
   ProcessedBucketName:
-    Description: The name of the processed bucket
-    Value: !Ref ProcessedBucket
+    Description: 'The name of the processed bucket'
+    Value: !Ref 'ProcessedBucket'
     Export:
       Name: !Sub "${StageName}-${SourceSystemName}-s3-processed-bucket"
 
   ProcessedS3EventTopicARN:
-    Description: The ARN of the processed bucket event SNS topic
-    Value: !Ref ProcessedS3EventTopic
+    Description: 'The ARN of the processed bucket event SNS topic'
+    Value: !Ref 'ProcessedS3EventTopic'
     Export:
       Name: !Sub "${StageName}-${SourceSystemName}-sns-processed-topic-arn"
 
   ProcessedBucketKMSKeyARN:
-    Description: The ARN of the processed KMS key
+    Description: 'The ARN of the processed KMS key'
     Value: !GetAtt 'ProcessedBucketKMSKey.Arn'
     Export:
       Name: !Sub "${StageName}-${SourceSystemName}-kms-processed-key-arn"

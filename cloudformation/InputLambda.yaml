@@ -1,0 +1,86 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Description: 'Provides a the input ingestion processing application environment'
+
+Parameters:
+
+  SourceSystemName:
+    Type: String
+    Description: 'The name of the source system to ingest (3-15 lowercase characters)'
+    AllowedPattern: '^[a-z]{3,15}$'
+
+  StageName:
+    Type: String
+    AllowedValues:
+      - dev
+      - test
+      - prod
+    Description: The stage of deployment
+
+Resources:
+
+  IngestLambdaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${StageName}-${SourceSystemName}-input-lambda-function'
+      Handler: 'com.aws.ingest.lambda.InputLambda'
+      Runtime: java8
+      Timeout: 900
+      CodeUri: ../target/IngestPipeline-1.0.0.jar
+      Role:
+        Fn::ImportValue:
+          !Sub '${StageName}-${SourceSystemName}-input-lambda-role-arn'
+      Events:
+        SQSEvent:
+          Type: SQS
+          Properties:
+            BatchSize: 1
+            Enabled: true
+            Queue: !GetAtt 'InputBucketQueue.Arn'
+
+  InputBucketQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      MaximumMessageSize: 262144
+      MessageRetentionPeriod: 1209600
+      QueueName: !Sub '${StageName}-input-${SourceSystemName}-queue'
+      VisibilityTimeout: 960
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt InputBucketRedriveQueue.Arn
+        maxReceiveCount: 5
+
+  InputBucketRedriveQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      MaximumMessageSize: 262144
+      MessageRetentionPeriod: 1209600
+      QueueName: !Sub '${StageName}-input-${SourceSystemName}-redrive-queue'
+      VisibilityTimeout: 960
+
+  InputBucketQueueSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Endpoint: !GetAtt 'InputBucketQueue.Arn'
+      Protocol: sqs
+      RawMessageDelivery: true
+      TopicArn:
+        Fn::ImportValue:
+          !Sub '${StageName}-${SourceSystemName}-sns-input-topic-arn'
+
+  InputBucketQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref InputBucketQueue
+      PolicyDocument:
+        Statement:
+          Effect: Allow
+          Principal: "*"
+          Action: sqs:SendMessage
+          Resource: "*"
+          Condition:
+            ArnEquals:
+              aws:SourceArn:
+                Fn::ImportValue:
+                  !Sub '${StageName}-${SourceSystemName}-sns-input-topic-arn'
