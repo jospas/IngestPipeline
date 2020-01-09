@@ -1,27 +1,12 @@
 ## Amazon Serverless Ingest Pipeline
 
-Proof of concept serverless ingest pipeline which aims to listen for input manaifest files created in S3 and process a batch of CSV files using a Java based Lambda functions.
+Proof of concept serverless ingest pipeline which aims to listen for input manifest files created in S3 and process a batch of CSV files using a Java based Lambda functions.
 
-Deployment occurs using AWS SAM and AWS CloudFormation.
+Deployment is achieved via AWS CloudFormation.
 
 ### Getting Started
 
 The system uses Apache Maven and is easily configured in IntelliJ by importing the Maven pom.xml as a new project.
-
-### Prerequisites
-
-To test this from a local development machine:
-
-<!--* Create or identify an S3 bucket in your account to upload Lambda code to
-* Create an IAM user and add to a group
-* Configure a local named profile in the AWS CLI
-* Grant the group IAM permissions for:
-    * S3 write to the bucket
-    * Kinesis
-    * SNS
-    * Lambda
-    * CloudWatch
-    * Creation of IAM roles-->
 
 ### Building
 
@@ -101,7 +86,11 @@ This template deploys the SQS and Lambda processing pipeline subscribed the inpu
 
 It requires the Lambda roles created in step 2).
 
-Prepare the stack for deployment via CloudFormation:
+A sample deployment script is provided:
+
+	scripts/deploy_input_lambda.sh
+
+To deploy by hand, repare the stack for deployment via CloudFormation:
 
 ```bash
 aws cloudformation package \
@@ -157,7 +146,11 @@ This template deploys the SQS and Lambda processing pipeline subscribed the proc
 
 It requires the Lambda roles created in step 2).
 
-Prepare the stack for deployment via CloudFormation:
+A sample deployment script is provided:
+
+	scripts/deploy_processed_lambda.sh
+
+To deploy by hand, prepare the stack for deployment via CloudFormation:
 
 ```bash
 aws cloudformation package \
@@ -206,3 +199,19 @@ aws cloudformation deploy \
 	--parameter-overrides StageName=dev \
 		SourceSystemName=mytestsystem
 ```
+
+#### 4) Copying configuration files
+
+Edit the script:
+
+	scripts/deploy_input_config.sh 
+
+to use your bucket and KMS key ids and deploy some sample configuration by running this script.
+
+#### 5) Inject and sample manifest.json
+
+Edit the script:
+
+	scripts/deploy_input_manifest.sh 
+	
+to use your bucket and KMS key ids and deploy a sample manifest.json for testing.
