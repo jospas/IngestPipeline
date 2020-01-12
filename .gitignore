@@ -3,3 +3,5 @@ target/
 .DS_Store
 *.iml
 *-prepared.yaml
+*_public_key.txt
+*_private_key.txt

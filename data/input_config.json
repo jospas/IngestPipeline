@@ -1,6 +1,8 @@
 {
+  "version": "1.0.0",
   "dataTypes": [
     {
+      "version": "1.0.0",
       "name": "customer",
       "enabled": true,
       "inputColumns": [
@@ -17,7 +19,9 @@
       ],
       "outputColumns": [
         "customer_id",
-        "postcode"
+        "address1",
+        "postcode",
+        "dob"
       ]
     },
     {

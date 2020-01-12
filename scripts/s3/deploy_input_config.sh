@@ -1,6 +1,6 @@
 #!/bin/bash
 
 aws s3 cp --sse aws:kms \
-    --sse-kms-key-id 3b3499f4-d737-4d3a-9d8f-e193a6644c7a \
+    --sse-kms-key-id 9f2f32e1-d8e4-47ba-a928-04613b82e67c \
     data/input_config.json \
     s3://dev-input-mytestsystem-255429042063/config/

@@ -1,5 +1,12 @@
 package com.aws.ingest.manifest;
 
+import com.aws.ingest.config.DataType;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import org.apache.commons.csv.CSVRecord;
+
+import java.util.List;
+
 /**
  * An entry in the manifest representing an uploaded CSV file
  */
@@ -21,9 +28,14 @@ public class ManifestEntry
     private String fileName = null;
 
     /**
-     * The secure hash of the content
+     * The signed MD5 of this entry's contents
      */
-    private String secureHash = null;
+    private String signature = null;
+
+    /**
+     * The MD5 of the file contents, never persisted
+     */
+    private transient String md5 = null;
 
     public String getDataType()
     {
@@ -55,13 +67,75 @@ public class ManifestEntry
         this.fileName = fileName;
     }
 
-    public String getSecureHash()
+    public String getSignature()
     {
-        return secureHash;
+        return signature;
     }
 
-    public void setSecureHash(String secureHash)
+    public void setSignature(String signature)
     {
-        this.secureHash = secureHash;
+        this.signature = signature;
+    }
+
+    public String getMd5()
+    {
+        return md5;
+    }
+
+    public void setMd5(String md5)
+    {
+        this.md5 = md5;
+    }
+
+    public void processRow(DataType dataType, CSVRecord row, List<String> outputBuffer)
+    {
+        for (String outputColumn: dataType.getOutputColumns())
+        {
+            outputBuffer.add(row.get(outputColumn));
+        }
+    }
+
+    /**
+     * Clones via JSON
+     * @return a clone of this
+     */
+    public ManifestEntry clone()
+    {
+        return ManifestEntry.fromJSON(ManifestEntry.toJSON(this));
+    }
+
+    /**
+     * Parses a ManifestEntry from Json
+     * @param json the json to parse
+     * @return the parsed ManifestEntry
+     */
+    public static ManifestEntry fromJSON(String json)
+    {
+        Gson gson = new GsonBuilder().create();
+        return gson.fromJson(json, ManifestEntry.class);
+    }
+
+    /**
+     * Converts a ManifestEntry object to JSON
+     * @param entry the ManifestEntry
+     * @return the ManifestEntry as JSON
+     */
+    public static String toJSON(ManifestEntry entry)
+    {
+        Gson gson = new GsonBuilder().create();
+        return gson.toJson(entry);
+    }
+
+    public void reset()
+    {
+        rowCount = 0;
+        signature = null;
+        md5 = null;
+    }
+
+    public void incrementRowCount()
+    {
+        rowCount++;
     }
 }
+

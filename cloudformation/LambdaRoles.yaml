@@ -96,9 +96,10 @@ Resources:
             Effect: Allow
             Action:
               - 's3:PutObject'
+              - 's3:AbortMultipartUpload'
             Resource:
-              - !Sub 'arn:aws:s3:::${StageName}-input-${SourceSystemName}-${AWS::AccountId}'
-              - !Sub 'arn:aws:s3:::${StageName}-input-${SourceSystemName}-${AWS::AccountId}/*'
+              - !Sub 'arn:aws:s3:::${StageName}-processed-${SourceSystemName}-${AWS::AccountId}'
+              - !Sub 'arn:aws:s3:::${StageName}-processed-${SourceSystemName}-${AWS::AccountId}/*'
 
   InputLambdaKMSPolicy:
     Type: AWS::IAM::ManagedPolicy
@@ -118,6 +119,10 @@ Resources:
             Effect: Allow
             Action:
               - 'kms:Encrypt'
+              - 'kms:Decrypt'
+              - 'kms:ReEncrypt*'
+              - 'kms:GenerateDataKey*'
+              - 'kms:DescribeKey'
             Resource:
               Fn::ImportValue:
                 !Sub '${StageName}-${SourceSystemName}-kms-processed-key-arn'

@@ -1,7 +1,6 @@
 package com.aws.ingest.config;
 
 import com.aws.ingest.exception.IngestException;
-import com.aws.ingest.manifest.Manifest;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -13,11 +12,24 @@ import java.util.List;
  */
 public class InputConfig
 {
+    private String version = null;
+    private String outputBucket = null;
+
     private final List<DataType> dataTypes = new ArrayList<>();
 
     public List<DataType> getDataTypes()
     {
         return dataTypes;
+    }
+
+    public String getVersion()
+    {
+        return version;
+    }
+
+    public void setVersion(String version)
+    {
+        this.version = version;
     }
 
     /**
@@ -47,5 +59,15 @@ public class InputConfig
         }
 
         throw new IngestException("Failed to locate data type for: " + name);
+    }
+
+    public String getOutputBucket()
+    {
+        return outputBucket;
+    }
+
+    public void setOutputBucket(String outputBucket)
+    {
+        this.outputBucket = outputBucket;
     }
 }

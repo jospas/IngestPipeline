@@ -279,6 +279,12 @@ Outputs:
     Export:
       Name: !Sub "${StageName}-${SourceSystemName}-kms-input-key-arn"
 
+  InputBucketKMSKeyId:
+    Description: 'The id of the input KMS key'
+    Value: !Ref 'InputBucketKMSKey'
+    Export:
+      Name: !Sub "${StageName}-${SourceSystemName}-kms-input-key-id"
+
   ProcessedBucketName:
     Description: 'The name of the processed bucket'
     Value: !Ref 'ProcessedBucket'
@@ -296,3 +302,9 @@ Outputs:
     Value: !GetAtt 'ProcessedBucketKMSKey.Arn'
     Export:
       Name: !Sub "${StageName}-${SourceSystemName}-kms-processed-key-arn"
+
+  ProcessedBucketKMSKeyId:
+    Description: 'The id of the processed KMS key'
+    Value: !Ref 'ProcessedBucketKMSKey'
+    Export:
+      Name: !Sub "${StageName}-${SourceSystemName}-kms-processed-key-id"

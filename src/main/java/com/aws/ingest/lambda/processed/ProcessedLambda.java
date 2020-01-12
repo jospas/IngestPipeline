@@ -19,6 +19,7 @@ import java.io.IOException;
 
 /**
  * Lambda function that copies transformed files to a CIFS share
+ * See: https://github.com/AgNO3/jcifs-ng
  */
 @SuppressWarnings("unused")
 public class ProcessedLambda implements RequestHandler<SQSEvent, Void>

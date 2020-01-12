@@ -1,26 +1,47 @@
 ## Amazon Serverless Ingest Pipeline
 
+<a name="contents"></a>
+### Contents
+
+- [Introduction](#introduction)
+- [Getting started](#getting-started)
+- [Installation](#installation)	
+	- Infrastructure template 	
+	- Lambda roles template
+	- Ingest Lambda template
+- asddsads
+- [Building secure manifests](#building-manifests)
+- [Limitations](#limitations)
+
+<a name="introduction"></a>
+### Introduction
+
 Proof of concept serverless ingest pipeline which aims to listen for input manifest files created in S3 and process a batch of CSV files using a Java based Lambda functions.
 
-Deployment is achieved via AWS CloudFormation.
+Hooks to add features to the processing pipeline to allow data enrichment and transformation are provided.
 
-### Getting Started
+Deployment to an AWS account is achieved via AWS CloudFormation.
+
+<a name="getting-started"></a>
+### Getting Started <a href="#contents">^</a>
 
 The system uses Apache Maven and is easily configured in IntelliJ by importing the Maven pom.xml as a new project.
 
-### Building
+### Building <a href="#contents">^</a>
 
 Build either from within IntelliJ or use Maven:
 
 ```bash
 mvn package
 ```
+<a name="installation"></a>
+### Installation <a href="#contents">^</a>
 
-### Installing
+Deployment is achieved via AWS CloudFormation.
 
 The templates should be deployed in the order detailed below.
 
-#### 1) Infrastructure Template
+#### 1) Infrastructure Template <a href="#installing">^</a>
 
 This template creates two S3 buckets and SNS topics that listen to object creation events.
 
@@ -43,7 +64,7 @@ aws cloudformation deploy \
     --template-file cloudformation/Infrastructure.yaml \
     --profile aws-josh \
     --region ap-southeast-2 \
-    --stack-name MyTestSystemStack \
+    --stack-name mytestsystem-infrastructure \
     --parameter-overrides Stage=dev \
     	SourceSystemName=mytestsystem
 ```
@@ -208,10 +229,30 @@ Edit the script:
 
 to use your bucket and KMS key ids and deploy some sample configuration by running this script.
 
-#### 5) Inject and sample manifest.json
+#### 5) Inject a sample manifest.json
 
 Edit the script:
 
 	scripts/deploy_input_manifest.sh 
 	
 to use your bucket and KMS key ids and deploy a sample manifest.json for testing.
+
+
+<a name="building-manifests"></a>
+
+### Building secure Manifests <a href="#contents">^</a>
+
+The system makes use of digital signatures to verify sender data integrity and identify. 
+
+This requires the sender to produce manifest files with a hash signed by the source system's private key, can be verified by the ingest pipeline using the public key.
+
+Example code is provided in:
+	
+	Manifest.java - signManifest(String [] keys)
+	
+See: [Java Digital Signature](https://www.baeldung.com/java-digital-signature)
+
+<a name="limitations"></a>
+### Limitations <a href="#contents">^</a>
+
+The system currently does not use multipart puts to S3 for writing processing data so output data files are limited to 5G in total compressed size.

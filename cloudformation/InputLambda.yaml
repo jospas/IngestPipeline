@@ -16,7 +16,17 @@ Parameters:
       - dev
       - test
       - prod
-    Description: The stage of deployment
+    Description: 'The stage of deployment'
+
+  PublicKey:
+    Type: String
+    Default: 'None'
+    Description: 'The upstream public key of the source system for verifying incoming manifests'
+
+  PrivateKey:
+    Type: String
+    Default: 'None'
+    Description: 'The downstream private key to sign manifests with when writing to the processed bucket'
 
 Resources:
 
@@ -44,6 +54,14 @@ Resources:
           CONFIG_BUCKET:
             Fn::ImportValue:
               !Sub '${StageName}-${SourceSystemName}-s3-input-bucket'
+          PROCESSED_BUCKET:
+            Fn::ImportValue:
+              !Sub '${StageName}-${SourceSystemName}-s3-processed-bucket'
+          PROCESSED_KMS_ID:
+            Fn::ImportValue:
+              !Sub '${StageName}-${SourceSystemName}-kms-processed-key-id'
+          PUBLIC_KEY: !Sub '${PublicKey}'
+          PRIVATE_KEY: !Sub '${PrivateKey}'
   InputBucketQueue:
     Type: AWS::SQS::Queue
     Properties:

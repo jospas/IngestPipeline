@@ -4,15 +4,9 @@
   "manifestEntries": [
     {
       "dataType": "customer",
-      "rowCount": 100,
+      "rowCount": 1,
       "fileName": "customers.csv",
-      "secureHash": "ASKDHASKJAHFJKAHDKHASKDHKASHDKASHDKHASKDHAKSHDKAHSD"
-    },
-    {
-      "dataType": "transaction",
-      "rowCount": 1000,
-      "fileName": "transactions.csv",
-      "secureHash": "ASDASDGHASGDJHGASJDGAJSHGDJHAGSDJHGASJHGDJASGDJGASJD"
+      "signature": "Dg8M0Uvl+fofhjnOpP4xKQn3hS4EAkTMNVBYQ8aCvc83YpQJvZBVw/iEe25zyZswIO+5fngYYr8j69tuCFw3DhwgDFXRqVWKJfL6N2KJ22LIdGoV2op9xnXKKcx7135iWnZmZqhM6n4QayYpSw+Xr4b22XIuZjM6DKPu0dh4jl74W6EU9zyLeSzku2bsNYsFEkVheaKWs+sIAPeJbY8bFzMdZIeChaLyiET96juBHKXmsRAa0k1+otMUhaqKuy3BGxmgXuuTvynTw7DJcG5ApYdgz+tlQ2Jubaw8FeQfHMVSFwC+EYT51ASpf+efh/1IZi64dBZp/uThlz1PcruzkA\u003d\u003d"
     }
   ]
 }
