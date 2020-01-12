@@ -6,12 +6,13 @@
 - [Introduction](#introduction)
 - [Getting started](#getting-started)
 - [Installation](#installation)	
-	- Infrastructure template 	
-	- Lambda roles template
-	- Ingest Lambda template
-- asddsads
+	- [Infrastructure template](#infrastructure)
+	- [Lambda roles template](#lambda_roles)
+	- [Input Lambda template](#input_lambda)
+	- [Processed Lambda template](#processed_lambda)
+	- [Copying configuration files](#copying)
+	- [Inject sample customer data and manifest.json](#inject)
 - [Building secure manifests](#building-manifests)
-- [Limitations](#limitations)
 
 <a name="introduction"></a>
 ### Introduction
@@ -23,11 +24,11 @@ Hooks to add features to the processing pipeline to allow data enrichment and tr
 Deployment to an AWS account is achieved via AWS CloudFormation.
 
 <a name="getting-started"></a>
-### Getting Started <a href="#contents">^</a>
+### Getting Started
 
 The system uses Apache Maven and is easily configured in IntelliJ by importing the Maven pom.xml as a new project.
 
-### Building <a href="#contents">^</a>
+### Building
 
 Build either from within IntelliJ or use Maven:
 
@@ -35,13 +36,14 @@ Build either from within IntelliJ or use Maven:
 mvn package
 ```
 <a name="installation"></a>
-### Installation <a href="#contents">^</a>
+### Installation
 
 Deployment is achieved via AWS CloudFormation.
 
 The templates should be deployed in the order detailed below.
 
-#### 1) Infrastructure Template <a href="#installing">^</a>
+<a name="infrastructure"></a>
+#### Infrastructure Template
 
 This template creates two S3 buckets and SNS topics that listen to object creation events.
 
@@ -69,7 +71,8 @@ aws cloudformation deploy \
     	SourceSystemName=mytestsystem
 ```
 
-#### 2) Lambda Roles Template
+<a name="lambda_roles"></a>
+#### Lambda Roles Template
 
 This template creates IAM roles for the two Lambda functions, subscribes them to an SQS queue and subscribes the SQS queuer to the SNS topics attached to the infrastrcuture buckets.
 
@@ -101,7 +104,8 @@ aws cloudformation deploy \
 	--capabilities CAPABILITY_NAMED_IAM
 ```
 
-#### 3) Input Lambda Template
+<a name="input_lambda"></a>
+#### Input Lambda Template
 
 This template deploys the SQS and Lambda processing pipeline subscribed the input S3 bucket change notifications via SNS.
 
@@ -146,22 +150,31 @@ aws cloudformation deploy \
 	--region <aws region> \
 	--stack-name <stack name> \
 	--parameter-overrides StageName=<stage> \
-		SourceSystemName=<source system name>
+		SourceSystemName=<source system name> \
+		PublicKey="<public key>" \
+		PrivateKey="<private key>"
 ```
 
 For example deploying a dev stack for MyTestSystem:
 
 ```bash
+
+publicKey=`cat data/input_public_key.txt`
+privateKey=`cat data/processed_private_key.txt`
+
 aws cloudformation deploy \
 	--template-file cloudformation/InputLambda-prepared.yaml \
 	--profile aws-josh \
 	--region ap-southeast-2 \
 	--stack-name MyTestSystemInputLambdaStack \
 	--parameter-overrides StageName=dev \
-		SourceSystemName=mytestsystem
+		SourceSystemName=mytestsystem \
+		PublicKey="$publicKey" \
+		PrivateKey="$privateKey" \
 ```
 
-#### 3) Processed Lambda Template
+<a name="processed_lambda"></a>
+#### Processed Lambda Template
 
 This template deploys the SQS and Lambda processing pipeline subscribed the processed S3 bucket change notifications via SNS.
 
@@ -206,21 +219,26 @@ aws cloudformation deploy \
 	--region <aws region> \
 	--stack-name <stack name> \
 	--parameter-overrides StageName=<stage> \
-		SourceSystemName=<source system name>
+		SourceSystemName=<source system name> \
+		PublicKey="<public key>"
 ```
 
 For example deploying a dev stack for MyTestSystem:
 
 ```bash
+
+publicKey=`cat data/processed_public_key.txt`
+
 aws cloudformation deploy \
 	--template-file cloudformation/ProcessedLambda-prepared.yaml \
 	--profile aws-josh \
 	--region ap-southeast-2 \
 	--stack-name MyTestSystemProcessedLambdaStack \
 	--parameter-overrides StageName=dev \
-		SourceSystemName=mytestsystem
+		SourceSystemName=mytestsystem \
+		PublicKey="$publicKey"
 ```
-
+<a name="copying"></a>
 #### 4) Copying configuration files
 
 Edit the script:
@@ -229,7 +247,8 @@ Edit the script:
 
 to use your bucket and KMS key ids and deploy some sample configuration by running this script.
 
-#### 5) Inject a sample manifest.json
+<a name="inject"></a>
+#### 5) Inject sample customer data and manifest.json
 
 Edit the script:
 
@@ -240,19 +259,24 @@ to use your bucket and KMS key ids and deploy a sample manifest.json for testing
 
 <a name="building-manifests"></a>
 
-### Building secure Manifests <a href="#contents">^</a>
+### Building secure Manifests
 
 The system makes use of digital signatures to verify sender data integrity and identify. 
 
 This requires the sender to produce manifest files with a hash signed by the source system's private key, can be verified by the ingest pipeline using the public key.
 
-Example code is provided in:
-	
-	Manifest.java - signManifest(String [] keys)
-	
-See: [Java Digital Signature](https://www.baeldung.com/java-digital-signature)
+The following command line utility can be used to generate public and private keys:
 
-<a name="limitations"></a>
-### Limitations <a href="#contents">^</a>
+	com.aws.ingest.security.KeyGenerator
 
-The system currently does not use multipart puts to S3 for writing processing data so output data files are limited to 5G in total compressed size.
+The following command line utility class can be used to sign manifests:
+
+	com.aws.ingest.security.SignManifest
+	
+The following command line utility class can be used to verify manifests:
+
+	com.aws.ingest.security.VerifyManfest
+	
+See: [Java Digital Signatures](https://www.baeldung.com/java-digital-signature)
+
+

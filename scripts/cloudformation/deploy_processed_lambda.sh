@@ -13,10 +13,13 @@ aws cloudformation package \
     --region ap-southeast-2 \
     --force-upload
 
+publicKey=`cat data/processed_public_key.txt`
+
 aws cloudformation deploy \
     --template-file cloudformation/ProcessedLambda-prepared.yaml \
     --profile aws-josh \
     --region ap-southeast-2 \
     --stack-name mytestsystem-processed-lambda \
     --parameter-overrides StageName=dev \
-        SourceSystemName=mytestsystem
+        SourceSystemName=mytestsystem \
+        PublicKey="$publicKey"

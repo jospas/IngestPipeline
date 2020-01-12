@@ -16,7 +16,12 @@ Parameters:
       - dev
       - test
       - prod
-    Description: The stage of deployment
+    Description: 'The stage of deployment'
+
+  PublicKey:
+    Type: String
+    Default: 'None'
+    Description: 'The upstream public key of the processed for verifying incoming manifests'
 
 Resources:
 
@@ -44,6 +49,7 @@ Resources:
           CONFIG_BUCKET:
             Fn::ImportValue:
               !Sub '${StageName}-${SourceSystemName}-s3-processed-bucket'
+          PUBLIC_KEY: !Sub '${PublicKey}'
 
   ProcessedBucketQueue:
     Type: AWS::SQS::Queue

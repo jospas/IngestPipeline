@@ -24,4 +24,4 @@ aws cloudformation deploy \
     --parameter-overrides StageName=dev \
         SourceSystemName=mytestsystem \
         PublicKey="$publicKey" \
-        PrivateKey="$privateKey" \
+        PrivateKey="$privateKey"
