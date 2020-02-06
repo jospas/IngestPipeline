@@ -115,7 +115,7 @@ A sample deployment script is provided:
 
 	scripts/deploy_input_lambda.sh
 
-To deploy by hand, repare the stack for deployment via CloudFormation:
+To deploy by hand, prepare the stack for deployment via CloudFormation:
 
 ```bash
 aws cloudformation package \
